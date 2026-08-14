@@ -5,7 +5,24 @@ import type { RepoContext } from "@/lib/types";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-const MODEL = "llama-3.3-70b-versatile";
+const PRIMARY_MODEL = "llama-3.3-70b-versatile";
+const FALLBACK_MODEL = "llama-3.1-8b-instant";
+
+const MAX_TREE_ENTRIES = 120;
+const MAX_TREE_DEPTH = 3;
+const MAX_TREE_CHARS = 1500;
+const MAX_DEPS_PER_LIST = 50;
+
+const PACKAGE_KEYS = [
+  "name",
+  "version",
+  "description",
+  "private",
+  "dependencies",
+  "devDependencies",
+  "peerDependencies",
+  "engines",
+] as const;
 
 const SYSTEM_PROMPT = `You are an expert technical writer producing rich, enterprise-grade README.md documentation for open-source software.
 
@@ -25,8 +42,64 @@ Strict rules:
 
 Output the completed README Markdown and nothing else.`;
 
+function isPackageJson(path: string): boolean {
+  return path.split("/").pop()?.toLowerCase() === "package.json";
+}
+
+function slimPackageJson(raw: string): string {
+  try {
+    const pkg = JSON.parse(raw);
+    if (typeof pkg !== "object" || pkg === null) return raw.slice(0, 3000);
+    const slim: Record<string, unknown> = {};
+    for (const key of PACKAGE_KEYS) {
+      if (pkg[key] !== undefined) slim[key] = pkg[key];
+    }
+    for (const depKey of ["dependencies", "devDependencies", "peerDependencies"]) {
+      const deps = pkg[depKey];
+      if (deps && typeof deps === "object") {
+        const entries = Object.entries(deps as Record<string, string>);
+        if (entries.length > MAX_DEPS_PER_LIST) {
+          slim[depKey] = Object.fromEntries(entries.slice(0, MAX_DEPS_PER_LIST));
+          (slim as Record<string, Record<string, unknown>>)[depKey].__truncated =
+            `${entries.length - MAX_DEPS_PER_LIST} more omitted`;
+        }
+      }
+    }
+    return JSON.stringify(slim).slice(0, 2500);
+  } catch {
+    return raw.slice(0, 3000);
+  }
+}
+
+function compactTreeForPrompt(tree: RepoContext["tree"]): RepoContext["tree"] {
+  const out: RepoContext["tree"] = [];
+  let chars = 0;
+  for (const entry of tree) {
+    if (entry.path.split("/").length > MAX_TREE_DEPTH) continue;
+    out.push(entry);
+    chars += entry.path.length + 32;
+    if (out.length >= MAX_TREE_ENTRIES || chars >= MAX_TREE_CHARS) break;
+  }
+  return out;
+}
+
+function isRetryableGroqError(err: unknown): boolean {
+  if (!err || typeof err !== "object") return false;
+  const status = (err as { status?: unknown }).status;
+  if (typeof status === "number" && (status === 429 || status === 413)) return true;
+  const message = err instanceof Error ? err.message : String(err);
+  return /rate|token|too large|tpm/i.test(message);
+}
+
 function error(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
+}
+
+function rateLimitError(message: string) {
+  return NextResponse.json(
+    { error: message },
+    { status: 429, headers: { "Retry-After": "30" } },
+  );
 }
 
 export async function POST(req: NextRequest) {
@@ -57,15 +130,13 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const compactTree = context.tree
-    .slice(0, 120)
-    .map(({ name, path, type, size }) => ({ name, path, type, size }));
+  const compactTree = compactTreeForPrompt(context.tree);
 
   const compactFiles: Record<string, string> = {};
   const LOCKFILES = /(package-lock|pnpm-lock|yarn\.lock|bun\.lockb|Cargo\.lock|go\.sum|composer\.lock|Gemfile\.lock|poetry\.lock)$/i;
   for (const [path, content] of Object.entries(context.fileContents)) {
     if (path.includes("/") || LOCKFILES.test(path)) continue;
-    compactFiles[path] = content.slice(0, 3000);
+    compactFiles[path] = isPackageJson(path) ? slimPackageJson(content) : content.slice(0, 3000);
     if (Object.keys(compactFiles).length >= 3) break;
   }
 
@@ -74,7 +145,7 @@ export async function POST(req: NextRequest) {
 ## Repository metadata
 ${JSON.stringify(context.repo, null, 2)}
 
-## File tree (first ${compactTree.length} entries)
+## File tree (depth ≤ ${MAX_TREE_DEPTH}, ${compactTree.length} entries, trimmed)
 ${JSON.stringify(compactTree, null, 2)}
 
 ## Key file contents
@@ -92,11 +163,10 @@ ${template}`;
   const abortController = new AbortController();
   const groq = new Groq({ apiKey: key });
 
-  let completion: Awaited<ReturnType<typeof groq.chat.completions.create>>;
-  try {
-    completion = await groq.chat.completions.create(
+  const createCompletion = (model: string) =>
+    groq.chat.completions.create(
       {
-        model: MODEL,
+        model,
         temperature: 0.3,
         max_tokens: 4096,
         messages: [
@@ -107,17 +177,42 @@ ${template}`;
       },
       { signal: abortController.signal },
     );
+
+  let completion: Awaited<ReturnType<typeof createCompletion>>;
+  let usedModel = PRIMARY_MODEL;
+  try {
+    completion = await createCompletion(PRIMARY_MODEL);
   } catch (err) {
-    console.error("Groq request failed:", err);
-    const message =
-      err instanceof Error ? err.message : "Failed to start generation.";
-    if (/too large|tokens per minute|rate_limit/i.test(message)) {
-      return error(
-        "The prompt exceeds your Groq account's token limit (TPM). Use a smaller repository or a higher-tier Groq API key. To retry, wait for the rate limit window to reset.",
-        429,
+    if (isRetryableGroqError(err)) {
+      console.warn(
+        `Groq ${PRIMARY_MODEL} rate limited, falling back to ${FALLBACK_MODEL}:`,
+        err instanceof Error ? err.message : err,
       );
+      usedModel = FALLBACK_MODEL;
+      try {
+        completion = await createCompletion(FALLBACK_MODEL);
+      } catch (fallbackErr) {
+        console.error("Groq fallback request also failed:", fallbackErr);
+        const message =
+          fallbackErr instanceof Error ? fallbackErr.message : "Failed to start generation.";
+        if (/too large|tokens per minute|rate_limit/i.test(message)) {
+          return rateLimitError(
+            "The prompt exceeds your Groq account's token limit (TPM). Use a smaller repository or a higher-tier Groq API key. To retry, wait for the rate limit window to reset.",
+          );
+        }
+        return error(`Groq API error: ${message}`, 502);
+      }
+    } else {
+      console.error("Groq request failed:", err);
+      const message =
+        err instanceof Error ? err.message : "Failed to start generation.";
+      if (/too large|tokens per minute|rate_limit/i.test(message)) {
+        return rateLimitError(
+          "The prompt exceeds your Groq account's token limit (TPM). Use a smaller repository or a higher-tier Groq API key. To retry, wait for the rate limit window to reset.",
+        );
+      }
+      return error(`Groq API error: ${message}`, 502);
     }
-    return error(`Groq API error: ${message}`, 502);
   }
 
   const stream = new ReadableStream<Uint8Array>({
@@ -133,7 +228,11 @@ ${template}`;
         controller.close();
       } catch (err) {
         console.error("Groq generation failed:", err);
-        controller.error(err instanceof Error ? err : new Error("Generation failed"));
+        try {
+          controller.error(err instanceof Error ? err : new Error("Generation failed"));
+        } catch {
+          // stream already cancelled or closed by the client
+        }
       }
     },
     cancel() {
@@ -146,6 +245,7 @@ ${template}`;
       "Content-Type": "text/plain; charset=utf-8",
       "Cache-Control": "no-cache, no-transform",
       "X-Accel-Buffering": "no",
+      "X-Generation-Model": usedModel,
     },
   });
 }
