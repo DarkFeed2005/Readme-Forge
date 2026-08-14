@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-
 # 🚀 Readme-Forge - Enterprise Platform
 > **An AI-powered README.md generator built with Next.js and Llama 3.3, converting GitHub repository URLs into polished documentation using custom templates.**
 
@@ -78,63 +76,6 @@ pnpm dev
 ---
 
 ## 📁 Project Structure
-
-```text
-=======
-# Readme-Forge
-> An AI-powered README.md generator built with Next.js and Llama 3.3. Converts GitHub repository URLs into polished documentation using custom templates.
-
-<p align="center">
-  <a href="https://nextjs.org/" target="_blank" rel="noreferrer">
-    <img src="https://skillicons.dev/icons?i=nextjs" alt="nextjs" width="50" height="50"/>
-  </a>&nbsp;
-  <a href="https://www.typescriptlang.org/" target="_blank" rel="noreferrer">
-    <img src="https://skillicons.dev/icons?i=ts" alt="typescript" width="50" height="50"/>
-  </a>&nbsp;
-  <a href="https://tailwindcss.com/" target="_blank" rel="noreferrer">
-    <img src="https://skillicons.dev/icons?i=tailwindcss" alt="tailwindcss" width="50" height="50"/>
-  </a>&nbsp;
-  <a href="https://groq.com/" target="_blank" rel="noreferrer">
-    <img src="https://skillicons.dev/icons?i=github" alt="groq" width="50" height="50"/>
-  </a>
-</p>
-
-<p align="center">
-  <img alt="License" src="https://img.shields.io/badge/license-MIT-45E0C2?style=flat-square">
-  <img alt="Stars" src="https://img.shields.io/github/stars/DarkFeed2005/Readme-Forge?style=flat-square">
-  <img alt="Forks" src="https://img.shields.io/github/forks/DarkFeed2005/Readme-Forge?style=flat-square">
-</p>
-
-## 📖 Table of Contents
-- [Overview](#-overview)
-- [Why Readme-Forge?](#why-readme-forge)
-- [Features](#-features)
-- [Architecture](#️-architecture)
-- [Tech Stack](#️-tech-stack)
-- [Installation](#-installation)
-- [Usage](#-usage)
-- [Project Structure](#-project-structure)
-- [Security Model](#-security-model)
-- [Roadmap](#-roadmap)
-- [Contributing](#-contributing)
-- [License](#-license)
-- [Author](#-author)
-
-## 🌟 Overview
-Readme-Forge is an AI-powered README.md generator built with Next.js and Llama 3.3. It converts GitHub repository URLs into polished documentation using custom templates.
-
-### Why Readme-Forge?
-Readme-Forge provides a simple and efficient way to generate high-quality README.md files for your GitHub repositories. With its AI-powered engine and custom templates, you can create professional-looking documentation in minutes.
-
-## ✨ Features
-- **AI-powered README.md generation**: Readme-Forge uses Llama 3.3 (via Groq) to generate high-quality README.md files based on your GitHub repository URL.
-- **GitHub metadata extraction**: Fetches real repository metadata, the recursive file tree, and manifest files (`package.json`, `go.mod`, `Cargo.toml`, `requirements.txt`) to detect the actual tech stack and features.
-- **Custom templates**: A static template system with placeholder tokens (`{{placeholders}}`) — paste or edit your own structure and the model fills it exactly as written.
-- **Live streaming preview**: Dual-pane dashboard with rendered Markdown preview and raw editor, Copy to Clipboard and Download `README.md` support.
-- **Environment config template**: ships with a `.env.example` for server-side `GROQ_API_KEY` configuration.
-
-## 🏗️ Architecture
-Readme-Forge is a Next.js 15 application using the App Router. It has **no database** — every generation flow runs fully in memory:
 
 ```
 ┌─────────────────┐    fetch(/api/github)     ┌──────────────────┐
@@ -238,35 +179,17 @@ Readme-Forge/
 │   │   ├── github.ts
 │   │   ├── templates.ts
 │   │   └── types.ts
-<<<<<<< Updated upstream
 ├── tailwind.config.ts
 └── tsconfig.json
 ```
 
 ---
 
-## 🤝 Contributing
 
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
----
 
-## 👨‍💻 Author
 
-GitHub: DarkFeed2005
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Language: TypeScript](https://img.shields.io/badge/Language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
-[![Stars: 0](https://img.shields.io/github/stars/DarkFeed2005/Readme-Forge.svg)](https://github.com/DarkFeed2005/Readme-Forge/stargazers)
-[![Forks: 0](https://img.shields.io/github/forks/DarkFeed2005/Readme-Forge.svg)](https://github.com/DarkFeed2005/Readme-Forge/network/members)
-=======
-│   ├── tailwind.config.ts
-└── tsconfig.json
-```
 
 ## 🔐 Security Model
 - **Server-side key custody**: the Groq API key lives in `.env.local`, which is gitignored and never committed. The client never sees the server key.
@@ -280,10 +203,20 @@ GitHub: DarkFeed2005
 - **Improve user interface**: Improve the user interface to make it more user-friendly.
 
 ## 🤝 Contributing
-Contributions are welcome! To contribute, please fork the repository and submit a pull request.
+
+1. Fork the Project
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the Branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
 ## 📄 License
 Readme-Forge is licensed under the MIT License. See `LICENSE` for details.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Language: TypeScript](https://img.shields.io/badge/Language-TypeScript-blue.svg)](https://www.typescriptlang.org/)
+[![Stars: 0](https://img.shields.io/github/stars/DarkFeed2005/Readme-Forge.svg)](https://github.com/DarkFeed2005/Readme-Forge/stargazers)
+[![Forks: 0](https://img.shields.io/github/forks/DarkFeed2005/Readme-Forge.svg)](https://github.com/DarkFeed2005/Readme-Forge/network/members)
+
 
 ## 👨‍💻 Author
 **Kalana Yasassri**
@@ -293,4 +226,4 @@ Readme-Forge is licensed under the MIT License. See `LICENSE` for details.
   <a href="https://www.linkedin.com/in/kalana-yasassri-684591251/" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/devicons/devicon/master/icons/linkedin/linkedin-original.svg" alt="linkedin" width="24" height="24"/></a>&nbsp;
   <a href="https://www.instagram.com/kalana_yasassri" target="_blank" rel="noreferrer"><img src="https://skillicons.dev/icons?i=instagram" alt="instagram" width="24" height="24"/></a>
 </p>
->>>>>>> Stashed changes
+
