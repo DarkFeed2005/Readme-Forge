@@ -7,27 +7,23 @@ export const maxDuration = 120;
 
 const MODEL = "llama-3.3-70b-versatile";
 
-const SYSTEM_PROMPT = `You are an elite technical documentation writer specializing in open-source software READMEs. You generate documentation that is accurate, precise, and professional.
+const SYSTEM_PROMPT = `You are an expert technical writer producing rich, enterprise-grade README.md documentation for open-source software.
 
-You will be given:
-1. A GitHub repository URL.
-2. Repository metadata and file tree (JSON) fetched from the GitHub API.
-3. Contents of key manifest/configuration files (JSON), such as package.json, go.mod, Cargo.toml, or requirements.txt.
-4. A detected tech stack and feature list.
-5. A README template written in Markdown that may contain {{PLACEHOLDER}} tokens.
+You will receive: a GitHub repo URL, repository metadata and file tree (JSON), key manifest file contents (JSON), a detected tech stack and feature list, and a Markdown README template that may contain {{PLACEHOLDER}} tokens.
 
-Your ONLY task is to produce the final README.md by strictly filling in the template. Follow these rules without exception:
+Strict rules:
+1. Output ONLY valid Markdown, starting directly with the template's H1 header. Never wrap the response in triple backticks; no code fences around the whole output, no JSON, no commentary, no preamble or postamble.
+2. Preserve the template's exact structure: every heading, subsection, and its order. Do not rename, remove, or reorder sections, do not add new top-level sections, and do not append extra content after the template's final section.
+3. Rich overviews: keep an engaging title with an emoji, followed by a bold single-sentence blockquote summary (> **...**). Expand "Why {Project}?" with 2-3 detailed paragraphs on purpose, architecture, and design choices.
+4. Skillicons headers: whenever a tech-stack icon row is requested (e.g. {{tech_stack_icons}}), emit a centered HTML row — <p align="center"> with <img src="https://skillicons.dev/icons?i=slug1,slug2" width="50"/> — using comma-separated slugs only for technologies proven by the detected stack or manifest files.
+5. Features: NEVER a flat bullet list. Group them into categorized emoji sub-sections such as "### 🎯 Core Features", "### 📦 Storage & Architecture", "### 🎨 UI/UX", "### 🔧 Technical Highlights", with a bold lead-in for each item. Only include features supported by the context.
+6. Installation & setup: comprehensive and step-by-step — git clone of the repo, dependency installation with exact commands matching the detected stack, environment/database configuration (e.g. .env, connection strings, migrations) where evident, and run commands.
+7. Project structure: render the file tree inside a plain text code block (\`\`\`text ... \`\`\`) using tree glyphs (├──, └──, │).
+8. shields.io badges must use real repo data (license, language, stars, forks) and the real owner/repo in the URLs.
+9. Never invent facts: no fake links, contributors, screenshots, versions, or features. Unknown details get an honest generic fallback.
+10. Placeholder glossary: {{repo_name}} display name; {{short_description}} one-sentence summary; {{tech_stack_icons}} comma-separated skillicons slugs (no spaces); {{tech_stack_list}} formatted technology list; {{core_feature_N}} core feature bullets; {{tech_highlight_N}} architecture/technical highlights; {{repo_url}} repository URL; {{file_tree}} directory tree inside \`\`\`text; {{repo_owner}} GitHub username.
 
-- Output ONLY valid Markdown. No code fences around the output, no JSON, no YAML, no explanations, no preamble, and no postamble.
-- Preserve the template's exact structure: every heading, section, and the overall layout. Do not rename, remove, or reorder sections, and do not add new top-level sections.
-- Fill every {{placeholder}} token with precise, high-quality content derived exclusively from the provided repository context. Replace the token itself with real content; never keep the {{ }} notation.
-- Installation and usage instructions MUST match the repository's actual tech stack, with exact commands where the manifest files make them evident (e.g. npm install / yarn / pnpm for Node.js, go mod tidy + go build for Go, cargo build for Rust, pip install -r requirements.txt for Python).
-- For the badge row, generate standard shields.io badges that match the real repository: license, language, stars, forks, and a reference to the repo's URL. Use the real owner/repo names in badge image URLs.
-- NEVER invent facts: no fake links, contributors, screenshots, demo URLs, package versions, or features not supported by the provided context. If something is genuinely unknown, write an honest generic description instead of fabricating details.
-- Keep the tone professional, concise, and consistent with the template's style.
-- If a {{placeholder}} corresponds to a section with little contextual data, still include the section with the best reasonable content available from context.
-
-Remember: output the completed README Markdown and nothing else.`;
+Output the completed README Markdown and nothing else.`;
 
 function error(message: string, status: number) {
   return NextResponse.json({ error: message }, { status });
@@ -66,8 +62,9 @@ export async function POST(req: NextRequest) {
     .map(({ name, path, type, size }) => ({ name, path, type, size }));
 
   const compactFiles: Record<string, string> = {};
+  const LOCKFILES = /(package-lock|pnpm-lock|yarn\.lock|bun\.lockb|Cargo\.lock|go\.sum|composer\.lock|Gemfile\.lock|poetry\.lock)$/i;
   for (const [path, content] of Object.entries(context.fileContents)) {
-    if (path.includes("/")) continue;
+    if (path.includes("/") || LOCKFILES.test(path)) continue;
     compactFiles[path] = content.slice(0, 3000);
     if (Object.keys(compactFiles).length >= 3) break;
   }

@@ -1,7 +1,9 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { motion, type Variants } from "framer-motion";
 import Navbar from "@/components/Navbar";
+import Loader from "@/components/Loader";
 import RepoForm from "@/components/RepoForm";
 import TemplateEditor from "@/components/TemplateEditor";
 import ReadmePreview from "@/components/ReadmePreview";
@@ -9,7 +11,34 @@ import { parseRepoUrl } from "@/lib/github";
 import { TEMPLATES } from "@/lib/templates";
 import type { RepoContext } from "@/lib/types";
 
+const containerVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const columnVariants: Variants = {
+  hidden: {},
+  visible: { transition: { staggerChildren: 0.1 } },
+};
+
+const panelVariants: Variants = {
+  hidden: { opacity: 0, y: 24 },
+  visible: { opacity: 1, y: 0, transition: { duration: 0.45, ease: "easeOut" } },
+};
+
 export default function Home() {
+  const [preloaderFading, setPreloaderFading] = useState(false);
+  const [preloaderVisible, setPreloaderVisible] = useState(true);
+
+  useEffect(() => {
+    const fadeTimer = setTimeout(() => setPreloaderFading(true), 1100);
+    const removeTimer = setTimeout(() => setPreloaderVisible(false), 1700);
+    return () => {
+      clearTimeout(fadeTimer);
+      clearTimeout(removeTimer);
+    };
+  }, []);
+
   const [repoUrl, setRepoUrl] = useState("");
   const [context, setContext] = useState<RepoContext | null>(null);
   const [isFetching, setIsFetching] = useState(false);
@@ -154,22 +183,48 @@ export default function Home() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      {preloaderVisible && (
+        <div
+          className={`fixed inset-0 z-[100] flex items-center justify-center bg-slate-950 transition-opacity duration-500 ${
+            preloaderFading ? "opacity-0" : "opacity-100"
+          }`}
+          aria-hidden={preloaderFading}
+        >
+          <Loader />
+        </div>
+      )}
+
       <Navbar />
 
       <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-8 sm:px-6 lg:px-8">
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold tracking-tight text-white sm:text-3xl">
+        <motion.div
+          initial={{ opacity: 0, y: -18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          transition={{ duration: 0.55, ease: "easeOut" }}
+          className="relative mb-10 pt-2"
+        >
+          <div
+            aria-hidden
+            className="pointer-events-none absolute -top-20 left-1/2 h-56 w-[40rem] max-w-full -translate-x-1/2 rounded-full bg-purple-600/10 blur-3xl"
+          />
+          <h1 className="relative bg-gradient-to-r from-purple-400 via-fuchsia-400 to-indigo-200 bg-clip-text text-3xl font-extrabold tracking-tight text-transparent sm:text-4xl">
             Forge a perfect README from any GitHub repository
           </h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-400">
+          <p className="relative mt-3 max-w-2xl text-sm text-slate-400">
             Readme Forge pulls real repository metadata, detects your tech stack, and uses
             Llama 3.3 on Groq to write documentation that fits your template exactly.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-          <div className="flex flex-col gap-6 lg:col-span-5">
-            <RepoForm
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="grid grid-cols-1 gap-6 lg:grid-cols-12"
+        >
+          <motion.div variants={columnVariants} className="flex flex-col gap-6 lg:col-span-5">
+            <motion.div variants={panelVariants}>
+              <RepoForm
               repoUrl={repoUrl}
               onRepoUrlChange={setRepoUrl}
               onFetch={handleFetch}
@@ -180,16 +235,19 @@ export default function Home() {
               onApiKeyChange={setApiKey}
               onGenerate={handleGenerate}
               isGenerating={isGenerating}
-            />
-            <TemplateEditor
+              />
+            </motion.div>
+            <motion.div variants={panelVariants}>
+              <TemplateEditor
               templateId={templateId}
               onTemplateIdChange={handleTemplateIdChange}
               template={template}
               onTemplateChange={setTemplate}
-            />
-          </div>
+              />
+            </motion.div>
+          </motion.div>
 
-          <div className="lg:col-span-7">
+          <motion.div variants={panelVariants} className="lg:col-span-7">
             <div className="lg:sticky lg:top-20 lg:h-[calc(100vh-6rem)]">
               <ReadmePreview
                 markdown={generated}
@@ -201,13 +259,13 @@ export default function Home() {
                 onCancel={handleCancel}
               />
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </main>
 
       <footer className="border-t border-slate-800/80 py-6">
         <p className="text-center text-xs text-slate-500">
-          Built with Next.js 15, Tailwind CSS, and Groq&apos;s Llama 3.3 70B.
+          2026 Readme-Forge. All rights reserved. -KpolitX.
         </p>
       </footer>
     </div>

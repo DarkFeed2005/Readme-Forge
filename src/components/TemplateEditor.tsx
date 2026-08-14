@@ -17,11 +17,9 @@ export default function TemplateEditor({
   const selected = getTemplateById(templateId);
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl shadow-black/20">
+    <section className="panel p-5">
       <div className="mb-4 flex items-center gap-3">
-        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-bold text-indigo-400">
-          3
-        </span>
+        <span className="step-badge">3</span>
         <h2 className="text-sm font-semibold text-white">README Template</h2>
       </div>
 
@@ -62,7 +60,7 @@ export default function TemplateEditor({
         <button
           type="button"
           onClick={() => onTemplateChange(selected.content)}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 transition hover:border-slate-700 hover:text-white"
+          className="inline-flex items-center gap-1.5 rounded-lg border border-slate-800 bg-slate-900 px-3 py-1.5 text-xs text-slate-300 transition duration-200 hover:border-purple-500/40 hover:text-white"
         >
           <RotateCcw className="h-3.5 w-3.5" />
           Reset to default

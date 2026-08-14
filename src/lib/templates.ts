@@ -5,39 +5,91 @@ export interface Template {
   content: string;
 }
 
-export const DEFAULT_TEMPLATE = `# {{repo_name}}
+export const DEFAULT_TEMPLATE = `# 🚀 {{repo_name}} - Enterprise Platform
 
-{{badges}}
+> {{short_description}}
 
-## About
+<p align="center">
+  <img src="https://skillicons.dev/icons?i={{tech_stack_icons}}" width="50"/>
+</p>
 
-{{about}}
+---
 
-## Key Features
+## 🌟 Overview
 
-{{features}}
+**{{repo_name}}** is a high-performance platform designed to...
 
-## Tech Stack
+### Why {{repo_name}}?
 
-{{tech_stack}}
+* **Unified Workspace:** Streamlines project workflows and data management into one solution.
+* **Modern Stack:** Built on modern infrastructure and clean architectural principles.
+* **Automated Data Flow:** Handles complex background logic and real-time processing seamlessly.
 
-## Getting Started
+---
 
-### Prerequisites
+## ✨ Features
 
-{{prerequisites}}
+### 🎯 Core Features
+* {{core_feature_1}}
+* {{core_feature_2}}
 
-### Installation
+### 🔧 Technical Highlights
+* {{tech_highlight_1}}
+* {{tech_highlight_2}}
 
-{{installation}}
+---
 
-## Usage
+## 🛠 Technologies Used
 
-{{usage}}
+{{tech_stack_list}}
 
-## License
+---
 
-{{license}}
+## 📦 Installation
+
+Clone the repository:
+\`\`\`bash
+git clone {{repo_url}}.git
+cd {{repo_name}}
+\`\`\`
+
+Install dependencies:
+\`\`\`bash
+pnpm install
+\`\`\`
+
+---
+
+## 🚀 Usage
+
+Start the development server:
+\`\`\`bash
+pnpm dev
+\`\`\`
+
+---
+
+## 📁 Project Structure
+
+\`\`\`text
+{{file_tree}}
+\`\`\`
+
+---
+
+## 🤝 Contributing
+
+1. Fork the Project
+2. Create your Feature Branch (\`git checkout -b feature/AmazingFeature\`)
+3. Commit your Changes (\`git commit -m 'Add some AmazingFeature'\`)
+4. Push to the Branch (\`git push origin feature/AmazingFeature\`)
+5. Open a Pull Request
+
+---
+
+## 👨‍💻 Author
+
+GitHub: {{repo_owner}}
 `;
 
 export const MINIMAL_TEMPLATE = `# {{repo_name}}
@@ -116,8 +168,8 @@ export const PRO_TEMPLATE = `# {{repo_name}}
 export const TEMPLATES: Template[] = [
   {
     id: "default",
-    name: "Default (Clean)",
-    description: "Balanced template with badges, overview, features, tech stack, quick start, usage, and license.",
+    name: "Enterprise (Standard)",
+    description: "Enterprise-grade skeleton: emoji title with blockquote, Skillicons header, categorized features, full setup guide, and project tree.",
     content: DEFAULT_TEMPLATE,
   },
   {

@@ -14,28 +14,38 @@
 
   body {
     @apply bg-slate-950 font-sans text-slate-200 antialiased;
+    background-image: radial-gradient(circle at 1px 1px, rgb(148 163 184 / 0.05) 1px, transparent 0);
+    background-size: 26px 26px;
   }
 
   ::selection {
-    @apply bg-indigo-500/40 text-white;
+    @apply bg-purple-500/40 text-white;
   }
 }
 
 @layer components {
+  .panel {
+    @apply rounded-2xl border border-slate-800/80 bg-slate-900/70 shadow-xl shadow-black/20 backdrop-blur-md transition-colors duration-200 hover:border-purple-500/30;
+  }
+
   .input-base {
-    @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20;
+    @apply w-full rounded-lg border border-slate-700 bg-slate-900 px-3 py-2.5 text-sm text-slate-100 placeholder-slate-500 outline-none transition duration-200 hover:border-slate-600 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/50 focus:shadow-lg focus:shadow-purple-500/20;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-indigo-500 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-indigo-500/25 transition hover:bg-indigo-400 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-2.5 text-sm font-medium text-white shadow-lg shadow-purple-500/25 transition duration-200 hover:from-purple-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-generate {
-    @apply inline-flex items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-indigo-500 to-violet-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/30 transition hover:from-indigo-400 hover:to-violet-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-purple-600 to-indigo-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-purple-500/25 transition duration-200 hover:from-purple-500 hover:to-indigo-500 hover:shadow-xl hover:shadow-purple-500/30 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .btn-secondary {
-    @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 transition hover:border-slate-600 hover:text-white disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center gap-1.5 rounded-lg border border-slate-700 bg-slate-900 px-3 py-1.5 text-xs font-medium text-slate-300 transition duration-200 hover:border-purple-500/40 hover:text-white disabled:cursor-not-allowed disabled:opacity-50;
+  }
+
+  .step-badge {
+    @apply flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-purple-500/15 text-xs font-bold text-purple-400;
   }
 }
 
@@ -91,7 +101,7 @@
 }
 
 .markdown-body a {
-  @apply text-indigo-400 underline decoration-indigo-400/40 underline-offset-2 transition hover:text-indigo-300;
+  @apply text-purple-400 underline decoration-purple-400/40 underline-offset-2 transition hover:text-purple-300;
 }
 
 .markdown-body ul {
@@ -108,7 +118,7 @@
 }
 
 .markdown-body code {
-  @apply rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[0.85em] text-indigo-300;
+  @apply rounded bg-slate-800 px-1.5 py-0.5 font-mono text-[0.85em] text-purple-300;
 }
 
 .markdown-body pre {
@@ -145,4 +155,41 @@
 
 .markdown-body abbr {
   @apply border-b border-dashed border-slate-600;
+}
+
+.book {
+  width: 150px;
+  height: 13px;
+  background-color: #f1775b;
+  border-bottom: 2px solid #506c86;
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.page {
+  width: 50%;
+  height: 2px;
+  background-color: #f1775b;
+  animation: paging 0.7s ease-out infinite;
+  transform-origin: left;
+}
+
+.page2 {
+  width: 50%;
+  height: 2px;
+  background-color: #f1775b;
+  animation: paging 0.8s ease-out infinite;
+  transform-origin: left;
+  position: absolute;
+}
+
+@keyframes paging {
+  10% {
+    transform: rotateZ(0deg);
+  }
+  100% {
+    transform: rotateZ(-180deg);
+  }
 }

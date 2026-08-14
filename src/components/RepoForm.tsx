@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { motion } from "framer-motion";
 import {
   AlertTriangle,
   Code2,
@@ -35,9 +36,7 @@ function formatCount(n: number): string {
 
 function StepBadge({ label }: { label: string }) {
   return (
-    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-bold text-indigo-400">
-      {label}
-    </span>
+    <span className="step-badge">{label}</span>
   );
 }
 
@@ -56,7 +55,7 @@ export default function RepoForm({
   const [showKey, setShowKey] = useState(false);
 
   return (
-    <section className="rounded-2xl border border-slate-800 bg-slate-900/50 p-5 shadow-xl shadow-black/20">
+    <section className="panel p-5">
       <div className="mb-4 flex items-center gap-3">
         <StepBadge label="1" />
         <h2 className="text-sm font-semibold text-white">Source Repository</h2>
@@ -65,7 +64,7 @@ export default function RepoForm({
       <label htmlFor="repo-url" className="mb-1.5 block text-xs font-medium text-slate-400">
         GitHub Repository URL
       </label>
-      <div className="flex gap-2">
+      <div className="relative">
         <input
           id="repo-url"
           type="text"
@@ -74,19 +73,21 @@ export default function RepoForm({
           onKeyDown={(e) => {
             if (e.key === "Enter") onFetch();
           }}
-          placeholder="https://github.com/owner/repo"
-          className="input-base flex-1"
+          placeholder="https://github.com/Your Username/project.git"
+          className="input-base pr-[5.5rem]"
           spellCheck={false}
         />
-        <button
+        <motion.button
           type="button"
           onClick={onFetch}
           disabled={isFetching || isGenerating}
-          className="btn-primary shrink-0"
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          className="absolute right-1.5 top-1/2 inline-flex -translate-y-1/2 items-center gap-1.5 rounded-lg bg-gradient-to-r from-purple-600 to-indigo-600 px-3 py-1.5 text-xs font-semibold text-white shadow-md shadow-purple-500/25 transition duration-200 hover:from-purple-500 hover:to-indigo-500 disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {isFetching ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+          {isFetching ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
           {isFetching ? "Fetching" : "Fetch"}
-        </button>
+        </motion.button>
       </div>
 
       {fetchError && (
@@ -103,7 +104,7 @@ export default function RepoForm({
               href={context.repo.htmlUrl}
               target="_blank"
               rel="noreferrer"
-              className="truncate font-semibold text-indigo-400 transition hover:text-indigo-300 hover:underline"
+              className="truncate font-semibold text-purple-400 transition hover:text-purple-300 hover:underline"
             >
               {context.repo.fullName}
             </a>
@@ -136,7 +137,7 @@ export default function RepoForm({
           </div>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {context.techStack.slice(0, 6).map((tech) => (
-              <span key={tech} className="rounded-md bg-indigo-500/10 px-2 py-0.5 text-[11px] text-indigo-300">
+              <span key={tech} className="rounded-md bg-purple-500/10 px-2 py-0.5 text-[11px] text-purple-300">
                 {tech}
               </span>
             ))}
@@ -156,7 +157,7 @@ export default function RepoForm({
           type={showKey ? "text" : "password"}
           value={apiKey}
           onChange={(e) => onApiKeyChange(e.target.value)}
-          placeholder="gsk_... (optional, falls back to server key)"
+          placeholder="Enter Your API (if have)"
           className="input-base pl-9 pr-10"
           spellCheck={false}
           autoComplete="off"
@@ -174,10 +175,12 @@ export default function RepoForm({
         Optional. Leave blank to use the GROQ_API_KEY configured on the server.
       </p>
 
-      <button
+      <motion.button
         type="button"
         onClick={onGenerate}
         disabled={!context || isFetching || isGenerating}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
         className="btn-generate mt-5 w-full"
       >
         {isGenerating ? (
@@ -191,7 +194,7 @@ export default function RepoForm({
             Generate README
           </>
         )}
-      </button>
+      </motion.button>
     </section>
   );
 }
