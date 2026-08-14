@@ -53,6 +53,13 @@ export default function Home() {
   const [generateError, setGenerateError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
+  const retryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (retryTimerRef.current) clearTimeout(retryTimerRef.current);
+    };
+  }, []);
 
   const handleFetch = async () => {
     if (isFetching || isGenerating) return;
@@ -96,6 +103,8 @@ export default function Home() {
     const controller = new AbortController();
     abortRef.current = controller;
 
+    let willAutoRetry = false;
+
     try {
       const res = await fetch("/api/generate", {
         method: "POST",
@@ -109,7 +118,7 @@ export default function Home() {
         signal: controller.signal,
       });
 
-      if (!res.ok || !res.body) {
+      if (!res.ok) {
         let message = `Generation failed (${res.status})`;
         try {
           const json = await res.json();
@@ -117,7 +126,30 @@ export default function Home() {
         } catch {
           // non-JSON error body
         }
+
+        if (res.status === 429) {
+          willAutoRetry = true;
+          let retryDelay = 10;
+          const retryAfter = res.headers.get("retry-after");
+          if (retryAfter) {
+            const parsed = parseInt(retryAfter, 10);
+            if (!Number.isNaN(parsed) && parsed > 0) {
+              retryDelay = Math.min(Math.max(parsed, 5), 30);
+            }
+          }
+          setGenerateError(`Rate limit reached. Retrying automatically in ${retryDelay} seconds…`);
+          retryTimerRef.current = setTimeout(() => {
+            retryTimerRef.current = null;
+            void handleGenerate();
+          }, retryDelay * 1000);
+          return;
+        }
+
         throw new Error(message);
+      }
+
+      if (!res.body) {
+        throw new Error("Generation failed (empty response body).");
       }
 
       const reader = res.body.getReader();
@@ -135,8 +167,10 @@ export default function Home() {
       if (err instanceof DOMException && err.name === "AbortError") return;
       setGenerateError(err instanceof Error ? err.message : "Generation failed.");
     } finally {
-      setIsGenerating(false);
-      abortRef.current = null;
+      if (!willAutoRetry) {
+        setIsGenerating(false);
+        abortRef.current = null;
+      }
     }
   };
 
