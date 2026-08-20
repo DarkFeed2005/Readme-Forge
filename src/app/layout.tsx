@@ -5,7 +5,7 @@ import Background3D from "@/components/Background3D";
 export const metadata: Metadata = {
   title: "Readme Forge — AI-Powered README Generator",
   description:
-    "Generate polished, accurate README.md files for any public GitHub repository using Llama 3.3 on Groq.",
+    "Generate polished, accurate README.md files for any public GitHub repository using OpenRouter.",
 };
 
 export default function RootLayout({

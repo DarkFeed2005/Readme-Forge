@@ -1,5 +1,5 @@
 # 🚀 Readme-Forge - Enterprise Platform
-> **An AI-powered README.md generator built with Next.js and Llama 3.3, converting GitHub repository URLs into polished documentation using custom templates.**
+> **An AI-powered README.md generator built with Next.js and OpenRouter, converting GitHub repository URLs into polished documentation using custom templates.**
 
 <p align="center">
   <img src="https://skillicons.dev/icons?i=nextjs" width="50"/>
@@ -39,7 +39,7 @@ In addition to its technical capabilities, Readme-Forge is also designed to be u
 * **AI-Powered README.md Generation:** Readme-Forge uses AI to generate high-quality README.md files, saving developers time and effort.
 
 ### 🔧 Technical Highlights
-* **Next.js and Llama 3.3 Integration:** Readme-Forge is built with Next.js and Llama 3.3, providing a powerful and scalable solution for generating README.md files.
+* **Next.js and OpenRouter Integration:** Readme-Forge is built with Next.js and OpenRouter, providing a powerful and scalable solution for generating README.md files.
 * **Custom Templates:** Readme-Forge allows developers to use custom templates, providing flexibility and control over the documentation process.
 
 ---
@@ -51,7 +51,7 @@ In addition to its technical capabilities, Readme-Forge is also designed to be u
 * React
 * Next.js
 * Tailwind CSS
-* Groq API
+* OpenRouter API
 
 ---
 
@@ -92,13 +92,13 @@ pnpm dev
          ▼                                    └─────────┬────────┘
 ┌─────────────────┐                          ┌───────────▼────────┐
 │   ReadmePreview  │ ◄── STREAM ─────────────│  /api/generate     │
-│  (react-markdown │                          │  (Groq SDK,        │
-│   + remark-gfm)  │                          │   Llama 3.3 70B,   │
+│  (react-markdown │                          │  (OpenRouter,      │
+│   + remark-gfm)  │                          │   GPT-OSS 120B,    │
 └─────────────────┘                          │   streaming)        │
                                               └───────────────────┘
 ```
 
-When you submit a repository URL, `/api/github` proxies the GitHub REST API (metadata, recursive file tree, key file contents) and detects the tech stack, then `/api/generate` hands that context plus your template to Llama 3.3 70B on Groq and streams the completion back to the browser for a live preview.
+When you submit a repository URL, `/api/github` proxies the GitHub REST API (metadata, recursive file tree, key file contents) and detects the tech stack, then `/api/generate` hands that context plus your template to Llama 3.3 70B via OpenRouter and streams the completion back to the browser for a live preview.
 
 ## 🛠️ Tech Stack
 **Frontend**
@@ -106,7 +106,7 @@ When you submit a repository URL, `/api/github` proxies the GitHub REST API (met
 - Tailwind CSS + [Lucide React](https://lucide.dev/) icons
 
 **AI Generation**
-- [Groq SDK](https://console.groq.com/) — [Llama 3.3 70B](https://groq.com/) (`llama-3.3-70b-versatile`), streamed server-sent response
+- [OpenRouter](https://openrouter.ai/) — [Llama 3.3 70B Instruct](https://openrouter.ai/meta-llama/llama-3.3-70b-instruct) (`meta-llama/llama-3.3-70b-instruct`), streamed server-sent response
 
 **Markdown Rendering**
 - [react-markdown](https://github.com/remarkjs/react-markdown) + [remark-gfm](https://github.com/remarkjs/remark-gfm)
@@ -124,7 +124,7 @@ To install Readme-Forge, follow these steps:
    ```
 3. Configure the environment:
    ```bash
-   cp .env.example .env.local   # add your GROQ_API_KEY (https://console.groq.com/keys)
+   cp .env.example .env.local   # add your OPENROUTER_API_KEY (https://openrouter.ai/keys)
    ```
 4. Start the application:
    ```bash
@@ -136,7 +136,7 @@ To install Readme-Forge, follow these steps:
 1. Paste a public GitHub repository URL (e.g. `https://github.com/owner/repo`) — or paste it directly into the **README Template** section of the dashboard.
 2. Click **Fetch** — metadata, file tree, and manifest contents are pulled from the GitHub API.
 3. Pick or paste your template (a default clean template is included; custom structures with `{{placeholders}}` are supported).
-4. Optionally override the Groq API key (it falls back to the server-side `GROQ_API_KEY`).
+4. Optionally override the OpenRouter API key (it falls back to the server-side `OPENROUTER_API_KEY`).
 5. Click **Generate README** — the result streams in live on the right; use **Copy** or **Download README.md** when it's done.
 
 ## 📁 Project Structure
@@ -167,7 +167,7 @@ Readme-Forge/
 │   │   ├── layout.tsx
 │   │   └── page.tsx
 =======
-│   │   │   ├── generate/           # Groq SDK streaming route (Llama 3.3 70B)
+│   │   │   ├── generate/           # OpenRouter streaming route (Llama 3.3 70B)
 │   │   │   └── github/             # GitHub metadata, tree, manifest fetcher
 │   │   ├── globals.css
 │   │   ├── icon.svg
@@ -196,7 +196,7 @@ Readme-Forge/
 
 
 ## 🔐 Security Model
-- **Server-side key custody**: the Groq API key lives in `.env.local`, which is gitignored and never committed. The client never sees the server key.
+- **Server-side key custody**: the OpenRouter API key lives in `.env.local`, which is gitignored and never committed. The client never sees the server key.
 - **Optional client key override**: if supplied, it is sent only to your own server and used exclusively for that generation request — never stored or logged.
 - **No persistence**: repository metadata and generated READMEs exist only in page memory for the session; nothing is written to disk or stored server-side.
 - **Public data only**: `/api/github` fetches only the public GitHub REST API and only repositories you provide a URL for.

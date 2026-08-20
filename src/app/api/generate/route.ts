@@ -1,12 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import Groq from "groq-sdk";
 import type { RepoContext } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-const PRIMARY_MODEL = "llama-3.3-70b-versatile";
-const FALLBACK_MODEL = "llama-3.1-8b-instant";
+const OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions";
+
+const PRIMARY_MODEL = "meta-llama/llama-3.3-70b-instruct";
+const FALLBACK_MODEL = "openai/gpt-4o-mini";
 
 const MAX_TREE_ENTRIES = 120;
 const MAX_TREE_DEPTH = 3;
@@ -83,12 +84,12 @@ function compactTreeForPrompt(tree: RepoContext["tree"]): RepoContext["tree"] {
   return out;
 }
 
-function isRetryableGroqError(err: unknown): boolean {
+function isRetryableError(err: unknown): boolean {
   if (!err || typeof err !== "object") return false;
   const status = (err as { status?: unknown }).status;
-  if (typeof status === "number" && (status === 429 || status === 413)) return true;
+  if (typeof status === "number" && (status === 429 || status === 413 || status === 402)) return true;
   const message = err instanceof Error ? err.message : String(err);
-  return /rate|token|too large|tpm/i.test(message);
+  return /rate|token|too large|tpm|credit|insufficient/i.test(message);
 }
 
 function error(message: string, status: number) {
@@ -122,10 +123,10 @@ export async function POST(req: NextRequest) {
     return error("Missing required fields: repoUrl, context, and template are required.", 400);
   }
 
-  const key = apiKey?.trim() || process.env.GROQ_API_KEY;
+  const key = apiKey?.trim() || process.env.OPENROUTER_API_KEY;
   if (!key) {
     return error(
-      "No Groq API key available. Provide one in the API Key field or set GROQ_API_KEY in your server environment.",
+      "No OpenRouter API key available. Provide one in the API Key field or set OPENROUTER_API_KEY in your server environment.",
       400,
     );
   }
@@ -161,11 +162,17 @@ ${context.features.join(", ") || "Not detected"}
 ${template}`;
 
   const abortController = new AbortController();
-  const groq = new Groq({ apiKey: key });
 
-  const createCompletion = (model: string) =>
-    groq.chat.completions.create(
-      {
+  const createCompletion = async (model: string) => {
+    const res = await fetch(OPENROUTER_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${key}`,
+        "HTTP-Referer": "http://localhost:3000",
+        "X-Title": "Readme Forge",
+      },
+      body: JSON.stringify({
         model,
         temperature: 0.3,
         max_tokens: 4096,
@@ -174,44 +181,60 @@ ${template}`;
           { role: "user", content: userPrompt },
         ],
         stream: true,
-      },
-      { signal: abortController.signal },
-    );
+      }),
+      signal: abortController.signal,
+    });
 
-  let completion: Awaited<ReturnType<typeof createCompletion>>;
+    if (!res.ok) {
+      let message = `HTTP ${res.status}`;
+      try {
+        const json = (await res.json()) as { error?: { message?: string } };
+        if (json.error?.message) message = json.error.message;
+      } catch {
+        // non-JSON error body
+      }
+      const err = new Error(message) as Error & { status?: number };
+      err.status = res.status;
+      throw err;
+    }
+
+    return res;
+  };
+
+  let res: Response;
   let usedModel = PRIMARY_MODEL;
   try {
-    completion = await createCompletion(PRIMARY_MODEL);
+    res = await createCompletion(PRIMARY_MODEL);
   } catch (err) {
-    if (isRetryableGroqError(err)) {
+    if (isRetryableError(err)) {
       console.warn(
-        `Groq ${PRIMARY_MODEL} rate limited, falling back to ${FALLBACK_MODEL}:`,
+        `OpenRouter ${PRIMARY_MODEL} unavailable, falling back to ${FALLBACK_MODEL}:`,
         err instanceof Error ? err.message : err,
       );
       usedModel = FALLBACK_MODEL;
       try {
-        completion = await createCompletion(FALLBACK_MODEL);
+        res = await createCompletion(FALLBACK_MODEL);
       } catch (fallbackErr) {
-        console.error("Groq fallback request also failed:", fallbackErr);
+        console.error("OpenRouter fallback request also failed:", fallbackErr);
         const message =
           fallbackErr instanceof Error ? fallbackErr.message : "Failed to start generation.";
-        if (/too large|tokens per minute|rate_limit/i.test(message)) {
+        if (/credit|insufficient|rate|token|too large|tpm/i.test(message)) {
           return rateLimitError(
-            "The prompt exceeds your Groq account's token limit (TPM). Use a smaller repository or a higher-tier Groq API key. To retry, wait for the rate limit window to reset.",
+            "OpenRouter is limiting this request (rate limit or credits). Add credits to your OpenRouter account, use a smaller repository, or retry when the rate limit resets.",
           );
         }
-        return error(`Groq API error: ${message}`, 502);
+        return error(`OpenRouter API error: ${message}`, 502);
       }
     } else {
-      console.error("Groq request failed:", err);
+      console.error("OpenRouter request failed:", err);
       const message =
         err instanceof Error ? err.message : "Failed to start generation.";
-      if (/too large|tokens per minute|rate_limit/i.test(message)) {
+      if (/credit|insufficient|rate|token|too large|tpm/i.test(message)) {
         return rateLimitError(
-          "The prompt exceeds your Groq account's token limit (TPM). Use a smaller repository or a higher-tier Groq API key. To retry, wait for the rate limit window to reset.",
+          "OpenRouter is limiting this request (rate limit or credits). Add credits to your OpenRouter account, use a smaller repository, or retry when the rate limit resets.",
         );
       }
-      return error(`Groq API error: ${message}`, 502);
+      return error(`OpenRouter API error: ${message}`, 502);
     }
   }
 
@@ -219,15 +242,37 @@ ${template}`;
     async start(controller) {
       const encoder = new TextEncoder();
       try {
-        for await (const chunk of completion) {
-          const delta = chunk.choices[0]?.delta?.content;
-          if (delta) {
-            controller.enqueue(encoder.encode(delta));
+        const reader = res.body?.getReader();
+        if (!reader) throw new Error("Empty response body from OpenRouter.");
+        const decoder = new TextDecoder();
+        let buffer = "";
+        for (;;) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) {
+            const trimmed = line.trim();
+            if (!trimmed.startsWith("data:")) continue;
+            const payload = trimmed.slice(5).trim();
+            if (payload === "[DONE]") continue;
+            try {
+              const json = JSON.parse(payload) as {
+                choices?: { delta?: { content?: string } }[];
+              };
+              const delta = json.choices?.[0]?.delta?.content;
+              if (typeof delta === "string" && delta.length > 0) {
+                controller.enqueue(encoder.encode(delta));
+              }
+            } catch {
+              // malformed SSE line, ignore
+            }
           }
         }
         controller.close();
       } catch (err) {
-        console.error("Groq generation failed:", err);
+        console.error("OpenRouter generation failed:", err);
         try {
           controller.error(err instanceof Error ? err : new Error("Generation failed"));
         } catch {

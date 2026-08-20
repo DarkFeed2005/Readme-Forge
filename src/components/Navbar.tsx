@@ -30,7 +30,7 @@ export default function Navbar() {
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
               <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
             </span>
-            Powered by Llama 3.3
+            Powered by OpenRouter
           </span>
           <a
             href="https://github.com"

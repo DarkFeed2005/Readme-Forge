@@ -246,7 +246,7 @@ export default function Home() {
           </h1>
           <p className="relative mt-3 max-w-2xl text-sm text-slate-400">
             Readme Forge pulls real repository metadata, detects your tech stack, and uses
-            Llama 3.3 on Groq to write documentation that fits your template exactly.
+            OpenRouter to write documentation that fits your template exactly.
           </p>
         </motion.div>
 

@@ -159,7 +159,7 @@ export default function ReadmePreview({
                 </motion.div>
                 <h3 className="text-base font-semibold text-white">Your README will appear here</h3>
                 <p className="mt-1.5 text-xs text-slate-400">
-                  Streamed live from Llama 3.3 — three steps to get going.
+                  Streamed live from OpenRouter — three steps to get going.
                 </p>
                 <div className="mt-6 grid gap-3 text-left sm:grid-cols-3">
                   <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-3.5 transition duration-200 hover:border-purple-500/30">

@@ -172,7 +172,7 @@ export default function RepoForm({
         </button>
       </div>
       <p className="mt-1.5 text-[11px] text-slate-500">
-        Optional. Leave blank to use the GROQ_API_KEY configured on the server.
+        Optional. Leave blank to use the OPENROUTER_API_KEY configured on the server.
       </p>
 
       <motion.button
